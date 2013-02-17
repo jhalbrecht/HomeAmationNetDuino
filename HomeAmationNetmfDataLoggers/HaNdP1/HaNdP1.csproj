@@ -50,5 +50,6 @@
     <Reference Include="SecretLabs.NETMF.Hardware.NetduinoPlus" />
     <Reference Include="System" />
     <Reference Include="System.IO" />
+    <Reference Include="System.Text.RegularExpressions" />
   </ItemGroup>
 </Project>

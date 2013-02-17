@@ -9,6 +9,7 @@ using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
 using Rodaw.Netmf.Led;
 using SecretLabs.NETMF.Hardware.NetduinoPlus;
+using System.Text.RegularExpressions; 
 
 // Adapted from:
 //  http://wiki.tinyclr.com/index.php?title=TCP_/_Web_Server_Tutorial
@@ -27,7 +28,7 @@ namespace HaNdP1
                 "JHA Netduino", // TODO name your data logger here.
                 DateTime.Now,
                 45.6745f,
-                0.0f);      // This code collects Temperature0 on A0. Set Temperature1 to 0.
+                0.0f);      // Temperature1 is not measured. Indicate by setting 0.
 
         public static void Main()
         {
@@ -100,12 +101,27 @@ namespace HaNdP1
                 try
                 {
                     Debug.Print("listening...");
-                    Socket newSock = listenSocket.Accept();
-                    Debug.Print("Accepted a connection from " + newSock.RemoteEndPoint.ToString());
-                    byte[] messageBytes = Encoding.UTF8.GetBytes(ReturnSummaryDataXml());
-                    newSock.Send(messageBytes);
-                    Thread.Sleep(1000);
-                    newSock.Close();
+                    Socket connection = listenSocket.Accept();
+                    Debug.Print("Accepted a connection from " + connection.RemoteEndPoint.ToString());
+                    if (connection.Poll(-1, SelectMode.SelectRead) && connection.Available > 0)
+                    {
+                        byte[] buffer = new byte[connection.Available];
+                        int bytesRead = connection.Receive(buffer); 
+                        string request = new string(Encoding.UTF8.GetChars(buffer)); 
+                        // Debug.Print(request);
+
+                        Match match = Regex.Match(request.ToUpper(), "GET /XML");
+                        if (match.Length > 0)
+                        {
+                            byte[] response = Encoding.UTF8.GetBytes(ReturnSummaryDataXml());
+                            string header = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n";
+                            connection.Send(Encoding.UTF8.GetBytes(header)); 
+                            connection.Send(response);
+                        }
+                    }
+                    //connection.SendTimeout = 2000; // TODO 2 seconds? 
+                    //Thread.Sleep(1000);
+                    connection.Close();
                 }
                 catch (Exception e)
                 {
@@ -125,7 +141,7 @@ namespace HaNdP1
                     a += a0.Read();
                 }
                 temperature0 = (a / times) * 100;
-                Debug.Print(temperature0.ToString("F2"));
+                // Debug.Print(temperature0.ToString("F2"));
                 Thread.Sleep(1000); 
             }
         }
