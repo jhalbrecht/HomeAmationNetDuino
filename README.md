@@ -5,7 +5,7 @@ HomeAmationNetDuino
 
 *See www.appdevpro.com/HomeAmation*
 
-<code>
+````XML<code>
 <SummaryTemperatureData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <DataLoggerDeviceName>JHA Netduino</DataLoggerDeviceName>
 <CurrentMeasuredTime>2013-02-16T21:37:49</CurrentMeasuredTime>
