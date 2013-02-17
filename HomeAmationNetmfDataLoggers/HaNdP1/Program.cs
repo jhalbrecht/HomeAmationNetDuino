@@ -102,7 +102,6 @@ namespace HaNdP1
                     Debug.Print("listening...");
                     Socket newSock = listenSocket.Accept();
                     Debug.Print("Accepted a connection from " + newSock.RemoteEndPoint.ToString());
-                    // byte[] messageBytes = Encoding.UTF8.GetBytes(ButtonPage(NI.IPAddress));
                     byte[] messageBytes = Encoding.UTF8.GetBytes(ReturnSummaryDataXml());
                     newSock.Send(messageBytes);
                     Thread.Sleep(1000);
@@ -121,7 +120,6 @@ namespace HaNdP1
             {
                 var times = 10;
                 a = 0;
-                // string s = a0.Read().ToString("F2");
                 for (int i = 0; i < times; i++)
                 {
                     a += a0.Read();
@@ -145,8 +143,7 @@ namespace HaNdP1
         {
             // http://www.tinyclr.com/codeshare/entry/404
             var adjustTz = new System.TimeSpan(0, 9, 0, 0);
-                // I'm in Arizona where they don't adjust DST, when I go back to Spokane this will need more elegance
-            // Utility.SetLocalTime(Util.GetNetworkTime() - adjustTz); //Set the RTC
+            // I'm in Arizona where they don't adjust DST, when I go back to Spokane this will need more elegance
             Utility.SetLocalTime(Rodaw.Netmf.Util.GetNetworkTime() - adjustTz); //Set the RTC
             Debug.Print("DateTime.Now... " + DateTime.Now.ToString());
         }
@@ -157,15 +154,14 @@ namespace HaNdP1
 
             using (XmlWriter xmlWriter = XmlWriter.Create(ms))
             {
+                // TODO add style information? 
                 xmlWriter.WriteProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\"");
                 xmlWriter.WriteStartElement("SummaryTemperatureData");
                 xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
                 xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-                // <xs:element name="startdate" type="xs:dateTime"/>
-                //xmlWriter.WriteElementString("CurrentMeasuredTime", std.CurrentMeasuredTime.ToString()); // TODO hmmm why is this showing a preposterous date? 
                 xmlWriter.WriteElementString("DataLoggerDeviceName", std.DataLoggerDeviceName);
+                // TODO would this fix the ToString("F2") ?? <xs:element name="startdate" type="xs:dateTime"/>
                 xmlWriter.WriteElementString("CurrentMeasuredTime", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"));
-                // xmlWriter.WriteElementString("CurrentTemperature0", std.CurrentTemperature0.ToString("F2"));
                 xmlWriter.WriteElementString("CurrentTemperature0", temperature0.ToString("F2"));
                 xmlWriter.WriteElementString("CurrentTemperature1", std.CurrentTemperature1.ToString("F2"));
                 xmlWriter.WriteEndElement();
@@ -176,8 +172,6 @@ namespace HaNdP1
             byte[] byteArray = ms.ToArray();
             char[] cc = UTF8Encoding.UTF8.GetChars(byteArray);
             string str = new string(cc);
-
-            // TODO add style information? 
             return str;
         }
     }
