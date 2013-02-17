@@ -7,10 +7,7 @@ using System.Text;
 using System.Threading;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
-// using Rodaw.Netmf.Led;
-// using Rodaw.Netmf;
 using Rodaw.Netmf.Led;
-using SecretLabs.NETMF.Hardware;
 using SecretLabs.NETMF.Hardware.NetduinoPlus;
 
 // Adapted from:
@@ -21,13 +18,16 @@ namespace HaNdP1
     public class Program
     {
         static SingleLed singleLed0 = new SingleLed(new OutputPort(Pins.ONBOARD_LED, true));
+        static AnalogInput a0 = new AnalogInput((Cpu.AnalogChannel)Cpu.AnalogChannel.ANALOG_0, 3.3, 0.0, 10);
+        static double a = 0;
+        static double temperature0 = 0;
 
         public static SummaryTemperatureData std =
             new SummaryTemperatureData(
-                "JHA Netduino",
+                "JHA Netduino", // TODO name your data logger here.
                 DateTime.Now,
                 45.6745f,
-                87.6589f);
+                0.0f);      // This code collects Temperature0 on A0. Set Temperature1 to 0.
 
         public static void Main()
         {
@@ -38,11 +38,12 @@ namespace HaNdP1
             singleLed0.Mode = SingleLedModes.Blink;
 
             Thread ledThread = new Thread(LedThread);
-            ledThread.Start(); 
+            ledThread.Start();
+
+            Thread temperatureThread = new Thread(TemperatureThread);
+            temperatureThread.Start();
 
             SetTheClock();
-
-
 
             #region Check we have a valid NIC
             // First, make sure we actually have a network interface to work with!
@@ -76,14 +77,13 @@ namespace HaNdP1
 
             #region Static IP code
             // Uncomment the following line if you want to use a static IP address, and comment out the DHCP code region above
+            // TODO enter your ip address here. Don't forget your default gateway.
             NI.EnableStaticIP("192.168.1.210", "255.255.255.0", "192.168.1.1");
             #endregion
 
             #region Create and Bind the listening socket
             // Create the socket            
             Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-           
 
             // Bind the listening socket to the portum  
             IPAddress hostIP = IPAddress.Parse(NI.IPAddress);
@@ -113,7 +113,23 @@ namespace HaNdP1
                     Debug.Print(e.Message);
                 }
             }
+        }
 
+        private static void TemperatureThread()
+        {
+            while (true)
+            {
+                var times = 10;
+                a = 0;
+                // string s = a0.Read().ToString("F2");
+                for (int i = 0; i < times; i++)
+                {
+                    a += a0.Read();
+                }
+                temperature0 = (a / times) * 100;
+                Debug.Print(temperature0.ToString("F2"));
+                Thread.Sleep(1000); 
+            }
         }
 
         private static void LedThread()
@@ -121,7 +137,7 @@ namespace HaNdP1
             while (true)
             {
                 singleLed0.Mode = SingleLedModes.Blink;
-                Thread.Sleep(750); 
+                Thread.Sleep(1750); 
             }
         }
 
@@ -135,39 +151,8 @@ namespace HaNdP1
             Debug.Print("DateTime.Now... " + DateTime.Now.ToString());
         }
 
-        // Read the states of the Cobra buttons and build a web page showing their states
-        static string ButtonPage(string sourceIP)
-        {
-            // Determine the states of the three cobra buttons
-            //string ubs; if (upButton.Read() == false) ubs = "Pressed"; else ubs = "Released";
-            //string sbs; if (selectButton.Read() == false) sbs = "Pressed"; else sbs = "Released";
-            //string dbs; if (downButton.Read() == false) dbs = "Pressed"; else dbs = "Released";
-
-            var ubs = "Pressed";
-            var sbs = "Pressed";
-            var dbs = "Pressed";
-            var foo = sourceIP; 
-
-
-            // Build the web page
-            string s = "<html>\n";                                      // First the page type
-            s += "<head><title>HomeAmation Test Page</title>";            // now the page header
-            s += "<META http-equiv=\"REFRESH\" content=\"1;URL=" + sourceIP + "\">";    // Auto-refresh
-            s += "</head>\n<body>\n";                                   // start the body        
-            s += "<p>Up Button State = <i>" + ubs + "</i></p>";         // Up button, state in italics
-            s += "<p>Select Button State = <i>" + sbs + "</i></p>";     // Select button, state in italics
-            s += "<p>Down Button State = <i>" + dbs + "</i></p>";       // Down button, state in italics
-            s += "<p>Source IP is: " + sourceIP + "</p>";
-            s += "<p>At the tone the time will be: " + DateTime.Now.ToLocalTime() + "</p>";
-            s += "</body>";                                             // close the body section
-            s += "</html>";                                             // close the page type
-            return s;
-        }
-
         static string ReturnSummaryDataXml()
         {
-            // http://www.scribd.com/doc/105868082/115/Creating-XML
-
             MemoryStream ms = new MemoryStream();
 
             using (XmlWriter xmlWriter = XmlWriter.Create(ms))
@@ -180,28 +165,20 @@ namespace HaNdP1
                 //xmlWriter.WriteElementString("CurrentMeasuredTime", std.CurrentMeasuredTime.ToString()); // TODO hmmm why is this showing a preposterous date? 
                 xmlWriter.WriteElementString("DataLoggerDeviceName", std.DataLoggerDeviceName);
                 xmlWriter.WriteElementString("CurrentMeasuredTime", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"));
-                xmlWriter.WriteElementString("CurrentTemperature0", std.CurrentTemperature0.ToString("F2"));
+                // xmlWriter.WriteElementString("CurrentTemperature0", std.CurrentTemperature0.ToString("F2"));
+                xmlWriter.WriteElementString("CurrentTemperature0", temperature0.ToString("F2"));
                 xmlWriter.WriteElementString("CurrentTemperature1", std.CurrentTemperature1.ToString("F2"));
                 xmlWriter.WriteEndElement();
                 xmlWriter.Flush();
                 xmlWriter.Close();
             }
 
-            // StringBuilder sb = new StringBuilder(); 
             byte[] byteArray = ms.ToArray();
             char[] cc = UTF8Encoding.UTF8.GetChars(byteArray);
             string str = new string(cc);
 
-            // TODO apparentloy no XmlWriter.WriterStartDocument is there another way to do this? 
-            // a more better, or proper way? 
             // TODO add style information? 
-
-            // sb.Append(@"<?xml version=""1.0"" encoding=""UTF-8""?>"); // jha
-            // sb.Append(str);
-            // return sb.ToString(); 
             return str;
-            //return cc; 
         }
-
     }
 }
