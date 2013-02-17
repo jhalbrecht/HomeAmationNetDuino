@@ -1,6 +1,6 @@
 HomeAmationNetDuino
 ===================
 
-A netmf data logger producing XML capable of being consumed by @HomeAmation
+##A netmf data logger producing XML capable of being consumed by @HomeAmation
 
-<h2>Opened in WebMatrix</h2>
+*See www.appdevpro.com/HomeAmation*
