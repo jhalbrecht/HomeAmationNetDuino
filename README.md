@@ -14,4 +14,7 @@ A netmf data logger producing XML capable of being consumed by @HomeAmation
 </SummaryTemperatureData>
 ```
 
-Windows 8 and Windows phone clients published to store(s) RSN.
+The HomeAmation data logger 
+[Windows phone application] (http://www.windowsphone.com/en-us/store/app/homeamation/75993ff4-5c61-4427-a5ec-67f694a9561b/ "App") is available in the store.
+
+Windows 8 client published to store RSN.
